@@ -36,9 +36,29 @@ mpg123_handle attribute_align_arg *mpg123_new(const char* decoder, int *error)
 	return mpg123_parnew(NULL, decoder, error);
 }
 
+#ifdef RUNTIME_TABLES
+static char tables_initialized = 0;
+#endif
+
 /* ...the full routine with optional initial parameters to override defaults. */
 mpg123_handle attribute_align_arg *mpg123_parnew(mpg123_pars *mp, const char* decoder, int *error)
 {
+#ifdef RUNTIME_TABLES
+if (!tables_initialized)
+{
+#ifndef NO_LAYER12
+	init_layer12(); /* inits also shared tables with layer1 */
+#endif
+#ifndef NO_LAYER3
+	init_layer3();
+#endif
+#ifndef REAL_IS_FIXED
+	prepare_decode_tables();
+#endif
+	tables_initialized = 1;
+}
+#endif
+
 	mpg123_handle *fr = NULL;
 	int err = MPG123_OK;
 

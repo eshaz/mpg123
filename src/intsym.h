@@ -158,6 +158,9 @@
 #define ntom_frmouts INT123_ntom_frmouts
 #define ntom_ins2outs INT123_ntom_ins2outs
 #define ntom_frameoff INT123_ntom_frameoff
+#define compute_costabs INT123_compute_costabs
+#define compute_layer12 INT123_compute_layer12
+#define compute_layer3 INT123_compute_layer3
 #define init_layer3 INT123_init_layer3
 #define init_layer3_gainpow2 INT123_init_layer3_gainpow2
 #define init_layer3_stuff INT123_init_layer3_stuff

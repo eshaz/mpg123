@@ -41,6 +41,12 @@ static const long intwinbase[] = {
  64019, 65290, 66494, 67629, 68692, 69679, 70590, 71420, 72169, 72835,
  73415, 73908, 74313, 74630, 74856, 74992, 75038 };
 
+void prepare_decode_tables() {
+	#ifdef RUNTIME_TABLES
+	compute_costabs();
+	#endif
+}
+
 #ifdef OPT_MMXORSSE
 #if !defined(OPT_X86_64) && !defined(OPT_NEON) && !defined(OPT_NEON64) && !defined(OPT_AVX)
 void make_decode_tables_mmx_asm(long scaleval, float* decwin_mmx, float *decwins);

@@ -1,6 +1,69 @@
 // output of:
 // src/libmpg123/calctables l12
 
+#ifdef RUNTIME_TABLES
+#ifdef REAL_IS_FLOAT
+// aligned to 16 bytes for vector instructions, e.g. AltiVec
+static ALIGNED(16) real layer12_table[27][64];
+#endif
+
+#ifdef REAL_IS_FIXED
+static real layer12_table[27][64];
+#endif
+
+static unsigned char grp_3tab[96], grp_5tab[384], grp_9tab[3072];
+static const real mulmul[27] =
+{
+	0.0 , -2.0/3.0 , 2.0/3.0 ,
+	2.0/7.0 , 2.0/15.0 , 2.0/31.0, 2.0/63.0 , 2.0/127.0 , 2.0/255.0 ,
+	2.0/511.0 , 2.0/1023.0 , 2.0/2047.0 , 2.0/4095.0 , 2.0/8191.0 ,
+	2.0/16383.0 , 2.0/32767.0 , 2.0/65535.0 ,
+	-4.0/5.0 , -2.0/5.0 , 2.0/5.0, 4.0/5.0 ,
+	-8.0/9.0 , -4.0/9.0 , -2.0/9.0 , 2.0/9.0 , 4.0/9.0 , 8.0/9.0
+};
+
+inline
+static void compute_layer12(void)
+{
+	// void init_layer12_stuff()
+	// real* init_layer12_table()
+	for(int k=0;k<27;k++)
+	{
+		int i,j;
+		real *table = layer12_table[k];
+		for(j=3,i=0;i<63;i++,j--)
+			*table++ = mulmul[k] * pow(2.0,(double) j / 3.0);
+		*table++ = 0.0;
+	}
+
+	// void init_layer12()
+	const char base[3][9] =
+	{
+		{ 1 , 0, 2 , } ,
+		{ 17, 18, 0 , 19, 20 , } ,
+		{ 21, 1, 22, 23, 0, 24, 25, 2, 26 }
+	};
+	int i,j,k,l,len;
+	const int tablen[3] = { 3 , 5 , 9 };
+	unsigned char *itable;
+	unsigned char *tables[3] = { grp_3tab , grp_5tab , grp_9tab };
+
+	for(i=0;i<3;i++)
+	{
+		itable = tables[i];
+		len = tablen[i];
+		for(j=0;j<len;j++)
+		for(k=0;k<len;k++)
+		for(l=0;l<len;l++)
+		{
+			*itable++ = base[i][l];
+			*itable++ = base[i][k];
+			*itable++ = base[i][j];
+		}
+	}
+}
+
+#else
 
 #ifdef REAL_IS_FLOAT
 
@@ -1202,3 +1265,4 @@ static const unsigned char grp_9tab[3072] =
 ,	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
 ,	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
 };
+#endif

@@ -1,3 +1,56 @@
+#include "l3bandgain.h"
+
+#ifdef RUNTIME_TABLES
+
+#ifdef REAL_IS_FLOAT
+static ALIGNED(16) real ispow[8207];
+static ALIGNED(16) real aa_ca[8];
+static ALIGNED(16) real aa_cs[8];
+static ALIGNED(16) real win[4][36];
+static ALIGNED(16) real win1[4][36];
+static ALIGNED(16) real COS9[9];
+static const real COS6_1 =  8.66025404e-01;
+static const real COS6_2 =  5.00000000e-01;
+static ALIGNED(16) real tfcos36[9];
+static ALIGNED(16) real tfcos12[3];
+static ALIGNED(16) real cos9[3];
+static ALIGNED(16) real cos18[3];
+static ALIGNED(16) real tan1_1[16];
+static ALIGNED(16) real tan2_1[16];
+static ALIGNED(16) real tan1_2[16];
+static ALIGNED(16) real tan2_2[16];
+static ALIGNED(16) real pow1_1[2][32];
+static ALIGNED(16) real pow2_1[2][32];
+static ALIGNED(16) real pow1_2[2][32];
+static ALIGNED(16) real pow2_2[2][32];
+static ALIGNED(16) real gainpow2[378];
+#endif
+
+#ifdef REAL_IS_FIXED
+static real ispow[8207];
+static real aa_ca[8];
+static real aa_cs[8];
+static real win[4][36];
+static real win1[4][36];
+static real COS9[9];
+static const real COS6_1 = 14529495;
+static const real COS6_2 = 8388608;
+static real tfcos36[9];
+static real tfcos12[3];
+static real cos9[3];
+static real cos18[3];
+static real tan1_1[16];
+static real tan2_1[16];
+static real tan1_2[16];
+static real tan2_2[16];
+static real pow1_1[2][32];
+static real pow2_1[2][32];
+static real pow1_2[2][32];
+static real pow2_2[2][32];
+static real gainpow2[378];
+#endif
+
+#else 
 // output of:
 // src/libmpg123/calctables l3
 
@@ -4700,9 +4753,19 @@ static const real gainpow2[378] =
 ,	          0,           0,           0,           0,           0
 ,	          0,           0,           0
 };
+#endif
 
 #endif
 
+#ifdef RUNTIME_TABLES
+static short mapbuf0[9][152];
+static short mapbuf1[9][156];
+static short mapbuf2[9][44];
+static short *map[9][3];
+static short *mapend[9][3];
+static unsigned short n_slen2[512];
+static unsigned short i_slen2[256];
+#else
 static const short mapbuf0[9][152] =
 {
 	{
@@ -5242,3 +5305,224 @@ static const unsigned short i_slen2[256] =
 ,	   16603,    20480,    20488,    20496,    20481,    20489,    20497,    20482,    20490
 ,	   20498,    20483,    20491,    20499
 };
+#endif
+
+#ifdef RUNTIME_TABLES
+
+// init tables for layer-3 ... specific with the downsampling...
+inline
+static void compute_layer3(void)
+{
+	int i,j,k,l;
+
+	for(i=0;i<8207;i++)
+	ispow[i] = DOUBLE_TO_REAL_POW43(pow((double)i,(double)4.0/3.0));
+
+	for(i=0;i<8;i++)
+	{
+		const double Ci[8] = {-0.6,-0.535,-0.33,-0.185,-0.095,-0.041,-0.0142,-0.0037};
+		double sq = sqrt(1.0+Ci[i]*Ci[i]);
+		aa_cs[i] = DOUBLE_TO_REAL(1.0/sq);
+		aa_ca[i] = DOUBLE_TO_REAL(Ci[i]/sq);
+	}
+
+	for(i=0;i<18;i++)
+	{
+		win[0][i]    = win[1][i]    =
+			DOUBLE_TO_REAL( 0.5*sin(M_PI/72.0 * (double)(2*(i+0) +1)) / cos(M_PI * (double)(2*(i+0) +19) / 72.0) );
+		win[0][i+18] = win[3][i+18] =
+			DOUBLE_TO_REAL( 0.5*sin(M_PI/72.0 * (double)(2*(i+18)+1)) / cos(M_PI * (double)(2*(i+18)+19) / 72.0) );
+	}
+	for(i=0;i<6;i++)
+	{
+		win[1][i+18] = DOUBLE_TO_REAL(0.5 / cos ( M_PI * (double) (2*(i+18)+19) / 72.0 ));
+		win[3][i+12] = DOUBLE_TO_REAL(0.5 / cos ( M_PI * (double) (2*(i+12)+19) / 72.0 ));
+		win[1][i+24] = DOUBLE_TO_REAL(0.5 * sin( M_PI / 24.0 * (double) (2*i+13) ) / cos ( M_PI * (double) (2*(i+24)+19) / 72.0 ));
+		win[1][i+30] = win[3][i] = DOUBLE_TO_REAL(0.0);
+		win[3][i+6 ] = DOUBLE_TO_REAL(0.5 * sin( M_PI / 24.0 * (double) (2*i+1 ) ) / cos ( M_PI * (double) (2*(i+6 )+19) / 72.0 ));
+	}
+
+	for(i=0;i<9;i++)
+	COS9[i] = DOUBLE_TO_REAL(cos( M_PI / 18.0 * (double) i));
+
+	for(i=0;i<9;i++)
+	tfcos36[i] = DOUBLE_TO_REAL(0.5 / cos ( M_PI * (double) (i*2+1) / 36.0 ));
+
+	for(i=0;i<3;i++)
+	tfcos12[i] = DOUBLE_TO_REAL(0.5 / cos ( M_PI * (double) (i*2+1) / 12.0 ));
+
+	cos9[0]  = DOUBLE_TO_REAL(cos(1.0*M_PI/9.0));
+	cos9[1]  = DOUBLE_TO_REAL(cos(5.0*M_PI/9.0));
+	cos9[2]  = DOUBLE_TO_REAL(cos(7.0*M_PI/9.0));
+	cos18[0] = DOUBLE_TO_REAL(cos(1.0*M_PI/18.0));
+	cos18[1] = DOUBLE_TO_REAL(cos(11.0*M_PI/18.0));
+	cos18[2] = DOUBLE_TO_REAL(cos(13.0*M_PI/18.0));
+
+	for(i=0;i<12;i++)
+	{
+		win[2][i] = DOUBLE_TO_REAL(0.5 * sin( M_PI / 24.0 * (double) (2*i+1) ) / cos ( M_PI * (double) (2*i+7) / 24.0 ));
+	}
+
+	for(i=0;i<16;i++)
+	{
+		// Special-casing possibly troublesome values where t=inf or
+		// t=-1 in theory. In practice, this never caused issues, but there might
+		// be a system with enough precision in M_PI to raise an exception.
+		// Actually, the special values are not excluded from use in the code, but
+		// in practice, they even have no effect in the compliance tests.
+		if(i > 11) // It's periodic!
+		{
+			tan1_1[i] = tan1_1[i-12];
+			tan2_1[i] = tan2_1[i-12];
+			tan1_2[i] = tan1_2[i-12];
+			tan2_2[i] = tan2_2[i-12];
+		} else if(i == 6) // t=inf
+		{
+			tan1_1[i] = DOUBLE_TO_REAL_15(1.0);
+			tan2_1[i] = DOUBLE_TO_REAL_15(0.0);
+			tan1_2[i] = DOUBLE_TO_REAL_15(M_SQRT2);
+			tan2_2[i] = DOUBLE_TO_REAL_15(0.0);
+		} else if(i == 9) // t=-1
+		{
+			tan1_1[i] = DOUBLE_TO_REAL_15(-HUGE_VAL);
+			tan2_1[i] = DOUBLE_TO_REAL_15(HUGE_VAL);
+			tan1_2[i] = DOUBLE_TO_REAL_15(-HUGE_VAL);
+			tan2_2[i] = DOUBLE_TO_REAL_15(HUGE_VAL);
+		} else
+		{
+			double t = tan( (double) i * M_PI / 12.0 );
+			tan1_1[i] = DOUBLE_TO_REAL_15(t / (1.0+t));
+			tan2_1[i] = DOUBLE_TO_REAL_15(1.0 / (1.0 + t));
+			tan1_2[i] = DOUBLE_TO_REAL_15(M_SQRT2 * t / (1.0+t));
+			tan2_2[i] = DOUBLE_TO_REAL_15(M_SQRT2 / (1.0 + t));
+		}
+	}
+
+	for(i=0;i<32;i++)
+	{
+		for(j=0;j<2;j++)
+		{
+			double base = pow(2.0,-0.25*(j+1.0));
+			double p1=1.0,p2=1.0;
+			if(i > 0)
+			{
+				if( i & 1 ) p1 = pow(base,(i+1.0)*0.5);
+				else p2 = pow(base,i*0.5);
+			}
+			pow1_1[j][i] = DOUBLE_TO_REAL_15(p1);
+			pow2_1[j][i] = DOUBLE_TO_REAL_15(p2);
+			pow1_2[j][i] = DOUBLE_TO_REAL_15(M_SQRT2 * p1);
+			pow2_2[j][i] = DOUBLE_TO_REAL_15(M_SQRT2 * p2);
+		}
+	}
+
+	for(j=0;j<4;j++)
+	{
+		const int len[4] = { 36,36,12,36 };
+		for(i=0;i<len[j];i+=2) win1[j][i] = + win[j][i];
+
+		for(i=1;i<len[j];i+=2) win1[j][i] = - win[j][i];
+	}
+
+	for(j=0;j<9;j++)
+	{
+		const struct bandInfoStruct *bi = &bandInfo[j];
+		short *mp;
+		short cb,lwin;
+		const unsigned char *bdf;
+		int switch_idx;
+
+		mp = map[j][0] = mapbuf0[j];
+		bdf = bi->longDiff;
+		switch_idx = (j < 3) ? 8 : 6;
+		for(i=0,cb = 0; cb < switch_idx ; cb++,i+=*bdf++)
+		{
+			*mp++ = (*bdf) >> 1;
+			*mp++ = i;
+			*mp++ = 3;
+			*mp++ = cb;
+		}
+		bdf = bi->shortDiff+3;
+		for(cb=3;cb<13;cb++)
+		{
+			int l = (*bdf++) >> 1;
+			for(lwin=0;lwin<3;lwin++)
+			{
+				*mp++ = l;
+				*mp++ = i + lwin;
+				*mp++ = lwin;
+				*mp++ = cb;
+			}
+			i += 6*l;
+		}
+		mapend[j][0] = mp;
+
+		mp = map[j][1] = mapbuf1[j];
+		bdf = bi->shortDiff+0;
+		for(i=0,cb=0;cb<13;cb++)
+		{
+			int l = (*bdf++) >> 1;
+			for(lwin=0;lwin<3;lwin++)
+			{
+				*mp++ = l;
+				*mp++ = i + lwin;
+				*mp++ = lwin;
+				*mp++ = cb;
+			}
+			i += 6*l;
+		}
+		mapend[j][1] = mp;
+
+		mp = map[j][2] = mapbuf2[j];
+		bdf = bi->longDiff;
+		for(cb = 0; cb < 22 ; cb++)
+		{
+			*mp++ = (*bdf++) >> 1;
+			*mp++ = cb;
+		}
+		mapend[j][2] = mp;
+	}
+
+	/* Now for some serious loopings! */
+	for(i=0;i<5;i++)
+	for(j=0;j<6;j++)
+	for(k=0;k<6;k++)
+	{
+		int n = k + j * 6 + i * 36;
+		i_slen2[n] = i|(j<<3)|(k<<6)|(3<<12);
+	}
+	for(i=0;i<4;i++)
+	for(j=0;j<4;j++)
+	for(k=0;k<4;k++)
+	{
+		int n = k + j * 4 + i * 16;
+		i_slen2[n+180] = i|(j<<3)|(k<<6)|(4<<12);
+	}
+	for(i=0;i<4;i++)
+	for(j=0;j<3;j++)
+	{
+		int n = j + i * 3;
+		i_slen2[n+244] = i|(j<<3) | (5<<12);
+		n_slen2[n+500] = i|(j<<3) | (2<<12) | (1<<15);
+	}
+	for(i=0;i<5;i++)
+	for(j=0;j<5;j++)
+	for(k=0;k<4;k++)
+	for(l=0;l<4;l++)
+	{
+		int n = l + k * 4 + j * 16 + i * 80;
+		n_slen2[n] = i|(j<<3)|(k<<6)|(l<<9)|(0<<12);
+	}
+	for(i=0;i<5;i++)
+	for(j=0;j<5;j++)
+	for(k=0;k<4;k++)
+	{
+		int n = k + j * 4 + i * 20;
+		n_slen2[n+400] = i|(j<<3)|(k<<6)|(1<<12);
+	}
+
+	for(int i=-256;i<118+4;i++)
+		gainpow2[i+256] =
+			DOUBLE_TO_REAL_SCALE_LAYER3(pow((double)2.0,-0.25 * (double) (i+210)),i+256);
+}
+#endif

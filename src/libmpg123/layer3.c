@@ -32,6 +32,12 @@
 
 #include "l3tabs.h"
 
+void init_layer3(void) {
+	#ifdef RUNTIME_TABLES
+	compute_layer3();
+	#endif
+}
+
 /* Decoder state data, living on the stack of do_layer3. */
 
 struct gr_info_s
@@ -68,8 +74,6 @@ struct III_sideinfo
 	/* Hm, funny... struct inside struct... */
 	struct { struct gr_info_s gr[2]; } ch[2];
 };
-
-#include "l3bandgain.h"
 
 #ifdef OPT_MMXORSSE
 real init_layer3_gainpow2_mmx(mpg123_handle *fr, int i)

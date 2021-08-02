@@ -22,6 +22,13 @@
 
 #include "l12tabs.h"
 
+void init_layer12(void)
+{
+	#ifdef RUNTIME_TABLES
+	compute_layer12();
+	#endif
+}
+
 // The layer12_table is already in real format (fixed or float), just needs
 // a little scaling in the MMX/SSE case.
 
