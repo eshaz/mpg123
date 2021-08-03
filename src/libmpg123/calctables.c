@@ -12,7 +12,6 @@
 
 #define FORCE_FIXED
 #define RUNTIME_TABLES
-
 #include "mpg123lib_intern.h"
 #include "debug.h"
 #include "l3tabs.h"

@@ -1,5 +1,6 @@
 // output of:
 // src/libmpg123/calctables cos
+
 #ifndef RUNTIME_TABLES
 
 #ifdef REAL_IS_FLOAT

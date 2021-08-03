@@ -24,9 +24,9 @@
 
 void init_layer12(void)
 {
-	#ifdef RUNTIME_TABLES
+#ifdef RUNTIME_TABLES
 	compute_layer12();
-	#endif
+#endif
 }
 
 // The layer12_table is already in real format (fixed or float), just needs

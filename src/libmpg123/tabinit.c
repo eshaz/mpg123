@@ -40,10 +40,11 @@ static const long intwinbase[] = {
  64019, 65290, 66494, 67629, 68692, 69679, 70590, 71420, 72169, 72835,
  73415, 73908, 74313, 74630, 74856, 74992, 75038 };
 
-void prepare_decode_tables() {
-	#ifdef RUNTIME_TABLES
+void prepare_decode_tables()
+{
+#ifdef RUNTIME_TABLES
 	compute_costabs();
-	#endif
+#endif
 }
 
 #ifdef OPT_MMXORSSE

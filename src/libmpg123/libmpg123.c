@@ -52,9 +52,7 @@ if (!tables_initialized)
 #ifndef NO_LAYER3
 	init_layer3();
 #endif
-#ifndef REAL_IS_FIXED
 	prepare_decode_tables();
-#endif
 	tables_initialized = 1;
 }
 #endif

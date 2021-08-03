@@ -32,10 +32,11 @@
 
 #include "l3tabs.h"
 
-void init_layer3(void) {
-	#ifdef RUNTIME_TABLES
+void init_layer3(void)
+{
+#ifdef RUNTIME_TABLES
 	compute_layer3();
-	#endif
+#endif
 }
 
 /* Decoder state data, living on the stack of do_layer3. */
