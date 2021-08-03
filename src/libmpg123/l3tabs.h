@@ -50,7 +50,7 @@ static real pow2_2[2][32];
 static real gainpow2[378];
 #endif
 
-#else 
+#else
 // output of:
 // src/libmpg123/calctables l3
 
