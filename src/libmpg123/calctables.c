@@ -67,7 +67,7 @@ static double limit_val(double val)
 
 static void print_array( int statick, int fixed, double fixed_scale
 ,	const char *indent, const char *name
-,	size_t count, double tab[] )
+,	size_t count, real tab[] )
 {
 	size_t block = 72/17;
 	size_t i = 0;
@@ -80,10 +80,10 @@ static void print_array( int statick, int fixed, double fixed_scale
 		size_t line = block > count-i ? count-i : block;
 		printf("%s", indent);
 		if(fixed) for(size_t j=0; j<line; ++j, ++i)
-			printf( "%s%c%11ld", i ? "," : "", j ? ' ' : '\t'
-			,	(long)(DOUBLE_TO_REAL(fixed_scale*tab[i])) );
+			printf( "%s%c%11d", i ? "," : "", j ? ' ' : '\t'
+			,	tab[i] );
 		else for(size_t j=0; j<line; ++j, ++i)
-			printf("%s%c%15.8e", i ? "," : "", j ? ' ' : '\t', limit_val(tab[i]));
+			printf("%s%c%15.8e", i ? "," : "", j ? ' ' : '\t', (double)(tab[i]/fixed_scale));
 		printf("\n");
 	}
 	printf("%s}%s\n", indent, name ? ";" : "");
@@ -92,7 +92,7 @@ static void print_array( int statick, int fixed, double fixed_scale
 // C99 allows passing VLA with the fast dimensions first.
 static void print_array2d( int fixed, double fixed_scale
 ,	const char *name, size_t x, size_t y
-, double tab[][y] )
+, real tab[][y] )
 {
 	printf( "static const%s real %s[%zu][%zu] = \n{\n", fixed ? "" : " ALIGNED(16)"
 	,	name, x, y );
@@ -208,12 +208,11 @@ int main(int argc, char **argv)
 		}
 		if(!strcmp("l12", argv[1]))
 		{
-			compute_layer12();
-			print_array2d(fixed, SCALE_LAYER12/REAL_FACTOR, "layer12_table", 27, 64, layer12_table);
+			print_array2d(fixed, SCALE_LAYER12, "layer12_table", 27, 64, layer12_table);
 		}
 		if(!strcmp("l3", argv[1]))
 		{
-			print_array(1, fixed, SCALE_POW43/REAL_FACTOR, "", "ispow"
+			print_array(1, fixed, SCALE_POW43, "", "ispow"
 			,	sizeof(ispow)/sizeof(*ispow), ispow );
 			print_array(1, fixed, 1., "", "aa_ca", ASIZE(aa_ca), aa_ca);
 			print_array(1, fixed, 1., "", "aa_cs", ASIZE(aa_cs), aa_cs);
@@ -226,21 +225,21 @@ int main(int argc, char **argv)
 			print_array(1, fixed, 1., "", "tfcos12", ASIZE(tfcos12), tfcos12);
 			print_array(1, fixed, 1., "", "cos9", ASIZE(cos9), cos9);
 			print_array(1, fixed, 1., "", "cos18", ASIZE(cos18), cos18);
-			print_array( 1, fixed, SCALE_15/REAL_FACTOR, ""
+			print_array( 1, fixed, SCALE_15, ""
 			,	"tan1_1", ASIZE(tan1_1), tan1_1 );
-			print_array( 1, fixed, SCALE_15/REAL_FACTOR, ""
+			print_array( 1, fixed, SCALE_15, ""
 			,	"tan2_1", ASIZE(tan2_1), tan2_1 );
-			print_array( 1, fixed, SCALE_15/REAL_FACTOR, ""
+			print_array( 1, fixed, SCALE_15, ""
 			,	"tan1_2", ASIZE(tan1_2), tan1_2 );
-			print_array( 1, fixed, SCALE_15/REAL_FACTOR, ""
+			print_array( 1, fixed, SCALE_15, ""
 			,	"tan2_2", ASIZE(tan2_2), tan2_2 );
-			print_array2d( fixed, SCALE_15/REAL_FACTOR
+			print_array2d( fixed, SCALE_15
 			,	"pow1_1", 2, 32, pow1_1 );
-			print_array2d( fixed, SCALE_15/REAL_FACTOR
+			print_array2d( fixed, SCALE_15
 			,	"pow2_1", 2, 32, pow2_1 );
-			print_array2d( fixed, SCALE_15/REAL_FACTOR
+			print_array2d( fixed, SCALE_15
 			,	"pow1_2", 2, 32, pow1_2 );
-			print_array2d( fixed, SCALE_15/REAL_FACTOR
+			print_array2d( fixed, SCALE_15
 			,	"pow2_2", 2, 32, pow2_2 );
 		}
 		if(fixed)

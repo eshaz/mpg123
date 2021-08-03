@@ -5310,8 +5310,7 @@ static const unsigned short i_slen2[256] =
 #ifdef RUNTIME_TABLES
 
 // init tables for layer-3 ... specific with the downsampling...
-inline
-static void compute_layer3(void)
+inline static void compute_layer3(void)
 {
 	int i,j,k,l;
 

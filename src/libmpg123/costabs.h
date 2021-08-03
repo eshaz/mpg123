@@ -1,26 +1,6 @@
 // output of:
 // src/libmpg123/calctables cos
-
-#if defined(RUNTIME_TABLES) && !defined(REAL_IS_FIXED)
-
-static ALIGNED(16) real cos64[16],cos32[8],cos16[4],cos8[2],cos4[1];
-
-inline
-static void compute_costabs(void)
-{
-  int i,k,kr,divv;
-  real *costab;
-
-  for(i=0;i<5;i++)
-  {
-    kr=0x10>>i; divv=0x40>>i;
-    costab = pnts[i];
-    for(k=0;k<kr;k++)
-      costab[k] = DOUBLE_TO_REAL(1.0 / (2.0 * cos(M_PI * ((double) k * 2.0 + 1.0) / (double) divv)));
-  }
-}
-
-#else
+#ifndef RUNTIME_TABLES
 
 #ifdef REAL_IS_FLOAT
 
@@ -81,4 +61,33 @@ static const real cos4[1] =
 };
 
 #endif
+
+#else
+
+#ifdef REAL_IS_FLOAT
+static ALIGNED(16) real cos64[16],cos32[8],cos16[4],cos8[2],cos4[1];
+#endif
+
+#ifdef REAL_IS_FIXED
+static real cos64[16],cos32[8],cos16[4],cos8[2],cos4[1];
+#endif
+
+#endif
+
+real *pnts[] = { cos64,cos32,cos16,cos8,cos4 };
+
+#ifdef RUNTIME_TABLES
+inline static void compute_costabs(void)
+{
+  int i,k,kr,divv;
+  real *costab;
+
+  for(i=0;i<5;i++)
+  {
+    kr=0x10>>i; divv=0x40>>i;
+    costab = pnts[i];
+    for(k=0;k<kr;k++)
+      costab[k] = DOUBLE_TO_REAL(1.0 / (2.0 * cos(M_PI * ((double) k * 2.0 + 1.0) / (double) divv)));
+  }
+}
 #endif

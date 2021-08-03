@@ -12,7 +12,7 @@ static real layer12_table[27][64];
 #endif
 
 static unsigned char grp_3tab[96], grp_5tab[384], grp_9tab[3072];
-static const real mulmul[27] =
+static const double mulmul[27] =
 {
 	0.0 , -2.0/3.0 , 2.0/3.0 ,
 	2.0/7.0 , 2.0/15.0 , 2.0/31.0, 2.0/63.0 , 2.0/127.0 , 2.0/255.0 ,
@@ -22,8 +22,7 @@ static const real mulmul[27] =
 	-8.0/9.0 , -4.0/9.0 , -2.0/9.0 , 2.0/9.0 , 4.0/9.0 , 8.0/9.0
 };
 
-inline
-static void compute_layer12(void)
+inline static void compute_layer12(void)
 {
 	// void init_layer12_stuff()
 	// real* init_layer12_table()
@@ -32,7 +31,7 @@ static void compute_layer12(void)
 		int i,j;
 		real *table = layer12_table[k];
 		for(j=3,i=0;i<63;i++,j--)
-			*table++ = mulmul[k] * pow(2.0,(double) j / 3.0);
+			*table++ = DOUBLE_TO_REAL_SCALE_LAYER12(mulmul[k] * pow(2.0,(double) j / 3.0));
 		*table++ = 0.0;
 	}
 

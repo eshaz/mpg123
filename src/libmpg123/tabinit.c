@@ -11,7 +11,6 @@
 
 // The precomputed cos tables.
 #include "costabs.h"
-const real *pnts[] = { cos64,cos32,cos16,cos8,cos4 };
 
 static const long intwinbase[] = {
      0,    -1,    -1,    -1,    -1,    -1,    -1,    -2,    -2,    -2,
