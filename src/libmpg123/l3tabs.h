@@ -5314,7 +5314,7 @@ inline static void compute_layer3(void)
 {
 	int i,j,k,l;
 
-	for(i=0;i<8207;i++)
+	for(i=8207;i>=0;i--)
 	ispow[i] = DOUBLE_TO_REAL_POW43(pow((double)i,(double)4.0/3.0));
 
 	for(i=0;i<8;i++)
@@ -5342,10 +5342,10 @@ inline static void compute_layer3(void)
 	}
 
 	for(i=0;i<9;i++)
-	COS9[i] = DOUBLE_TO_REAL(cos( M_PI / 18.0 * (double) i));
-
-	for(i=0;i<9;i++)
-	tfcos36[i] = DOUBLE_TO_REAL(0.5 / cos ( M_PI * (double) (i*2+1) / 36.0 ));
+	{
+		COS9[i] = DOUBLE_TO_REAL(cos( M_PI / 18.0 * (double) i));
+		tfcos36[i] = DOUBLE_TO_REAL(0.5 / cos ( M_PI * (double) (i*2+1) / 36.0 ));
+	}
 
 	for(i=0;i<3;i++)
 	tfcos12[i] = DOUBLE_TO_REAL(0.5 / cos ( M_PI * (double) (i*2+1) / 12.0 ));
