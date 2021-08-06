@@ -39,24 +39,13 @@
 #define memmove(dst,src,size) bcopy(src,dst,size)
 #endif
 
-/* We don't really do long double... there are 3 options for REAL:
-   float, long and double. */
-
-#if defined(REAL_IS_FLOAT) && !defined(FORCE_FIXED)
-#  define real float
-#elif defined(REAL_IS_FIXED) || defined(FORCE_FIXED)
-
-# define real  int32_t
-# define dreal int64_t
-
-/*
-  for fixed-point decoders, use pre-calculated tables to avoid expensive floating-point maths
-  undef this macro for run-time calculation
-*/
-#define PRECALC_TABLES
+#if defined(REAL_IS_FIXED) || defined(REAL_IS_DOUBLE)
 
 # define REAL_RADIX				24
 # define REAL_FACTOR			16777216.0
+# define SCALE_POW43			8192.0
+# define SCALE_15				32768.0
+# define SCALE_LAYER12          1073741824.0
 
 static inline int32_t double_to_long_rounded(double x, double scalefac)
 {
@@ -72,6 +61,23 @@ static inline int32_t scale_rounded(int32_t x, int shift)
 	x += (x & 1);
 	return (x >> 1);
 }
+#endif
+
+/* We don't really do long double... there are 3 options for REAL:
+   float, long and double. */
+
+#if defined(REAL_IS_FLOAT)
+#  define real float
+#elif defined(REAL_IS_FIXED)
+
+# define real  int32_t
+# define dreal int64_t
+
+/*
+  for fixed-point decoders, use pre-calculated tables to avoid expensive floating-point maths
+  undef this macro for run-time calculation
+*/
+#define PRECALC_TABLES
 
 # ifdef __GNUC__
 #  if defined(OPT_I386)
@@ -167,11 +173,8 @@ static inline int32_t scale_rounded(int32_t x, int shift)
 
 /* I just changed the (int) to (real) there... seemed right. */
 # define DOUBLE_TO_REAL(x)					(double_to_long_rounded(x, REAL_FACTOR))
-# define SCALE_15								32768.0
 # define DOUBLE_TO_REAL_15(x)				(double_to_long_rounded(x, SCALE_15))
-# define SCALE_POW43							8192.0
 # define DOUBLE_TO_REAL_POW43(x)			(double_to_long_rounded(x, SCALE_POW43))
-# define SCALE_LAYER12                  1073741824.0
 # define DOUBLE_TO_REAL_SCALE_LAYER12(x)	(double_to_long_rounded(x, SCALE_LAYER12))
 # define DOUBLE_TO_REAL_SCALE_LAYER3(x, y)	(double_to_long_rounded(x, pow(2.0,gainpow2_scale[y])))
 # define REAL_TO_DOUBLE(x)					((double)(x) / REAL_FACTOR)
@@ -200,6 +203,29 @@ static inline int32_t scale_rounded(int32_t x, int shift)
 #  define REAL_SCALE_DCT64(x)				((x) >> 8)
 #  define REAL_SCALE_WINDOW(x)				scale_rounded(x, 16)
 # endif
+
+/* Used in calctables.c only */
+#elif defined(REAL_IS_DOUBLE)
+#define real double
+
+#ifndef DOUBLE_TO_REAL
+# define DOUBLE_TO_REAL(x)					(x)
+#endif
+#ifndef DOUBLE_TO_REAL_15
+# define DOUBLE_TO_REAL_15(x)				(x)
+#endif
+#ifndef DOUBLE_TO_REAL_POW43
+# define DOUBLE_TO_REAL_POW43(x)			(x)
+#endif
+#ifndef DOUBLE_TO_REAL_SCALE_LAYER12
+# define DOUBLE_TO_REAL_SCALE_LAYER12(x)	(x)
+#endif
+#ifndef DOUBLE_TO_REAL_SCALE_LAYER3
+# define DOUBLE_TO_REAL_SCALE_LAYER3(x, y)	(double_to_long_rounded(x, pow(2.0,gainpow2_scale[y])))
+#endif
+#ifndef REAL_TO_DOUBLE
+# define REAL_TO_DOUBLE(x)					(x)
+#endif
 
 #else
 

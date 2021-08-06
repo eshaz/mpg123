@@ -9,8 +9,8 @@ static ALIGNED(16) real aa_cs[8];
 static ALIGNED(16) real win[4][36];
 static ALIGNED(16) real win1[4][36];
 static ALIGNED(16) real COS9[9];
-static const real COS6_1 =  8.66025404e-01;
-static const real COS6_2 =  5.00000000e-01;
+static ALIGNED(16) real COS6_1;
+static ALIGNED(16) real COS6_2;
 static ALIGNED(16) real tfcos36[9];
 static ALIGNED(16) real tfcos12[3];
 static ALIGNED(16) real cos9[3];
@@ -24,17 +24,15 @@ static ALIGNED(16) real pow2_1[2][32];
 static ALIGNED(16) real pow1_2[2][32];
 static ALIGNED(16) real pow2_2[2][32];
 static ALIGNED(16) real gainpow2[378];
-#endif
-
-#ifdef REAL_IS_FIXED
+#else
 static real ispow[8207];
 static real aa_ca[8];
 static real aa_cs[8];
 static real win[4][36];
 static real win1[4][36];
 static real COS9[9];
-static const real COS6_1 = 14529495;
-static const real COS6_2 = 8388608;
+static real COS6_1;
+static real COS6_2;
 static real tfcos36[9];
 static real tfcos12[3];
 static real cos9[3];
@@ -5349,6 +5347,9 @@ inline static void compute_layer3(void)
 
 	for(i=0;i<3;i++)
 	tfcos12[i] = DOUBLE_TO_REAL(0.5 / cos ( M_PI * (double) (i*2+1) / 12.0 ));
+
+	COS6_1 = cos( M_PI / 6.0 * (double) 1);
+	COS6_2 = cos( M_PI / 6.0 * (double) 2);
 
 	cos9[0]  = DOUBLE_TO_REAL(cos(1.0*M_PI/9.0));
 	cos9[1]  = DOUBLE_TO_REAL(cos(5.0*M_PI/9.0));

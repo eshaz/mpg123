@@ -5,9 +5,7 @@
 #ifdef REAL_IS_FLOAT
 // aligned to 16 bytes for vector instructions, e.g. AltiVec
 static ALIGNED(16) real layer12_table[27][64];
-#endif
-
-#ifdef REAL_IS_FIXED
+#else
 static real layer12_table[27][64];
 #endif
 

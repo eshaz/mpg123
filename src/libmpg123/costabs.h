@@ -67,9 +67,7 @@ static real cos4[1] =
 
 #ifdef REAL_IS_FLOAT
 static ALIGNED(16) real cos64[16],cos32[8],cos16[4],cos8[2],cos4[1];
-#endif
-
-#ifdef REAL_IS_FIXED
+#else
 static real cos64[16],cos32[8],cos16[4],cos8[2],cos4[1];
 #endif
 

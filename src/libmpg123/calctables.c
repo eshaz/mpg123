@@ -10,7 +10,16 @@
 	live on library startup in mpg123_init().
 */
 
-#define FORCE_FIXED
+#ifdef REAL_IS_FLOAT
+#undef REAL_IS_FLOAT
+#endif
+
+#ifdef REAL_IS_FIXED
+#undef REAL_IS_FIXED
+#endif
+
+#define REAL_IS_DOUBLE
+
 #define RUNTIME_TABLES
 #include "mpg123lib_intern.h"
 #include "debug.h"
@@ -47,7 +56,7 @@ static void print_value( int fixed, double fixed_scale
 	if(name)
 		printf("static const real %s = ", name);
 	if(fixed)
-		printf("%ld;\n", (long)(DOUBLE_TO_REAL(fixed_scale*val)));
+		printf("%ld;\n", (long)(double_to_long_rounded(fixed_scale*val, REAL_FACTOR)));
 	else
 		printf("%15.8e;\n", val);
 }
@@ -64,25 +73,26 @@ static double limit_val(double val)
 	return val;
 }
 
-static void print_array( int statick, int fixed, double fixed_scale
+static void print_array( int statick, int konst, int fixed, double fixed_scale
 ,	const char *indent, const char *name
-,	size_t count, real tab[] )
+,	size_t count, double tab[] )
 {
 	size_t block = 72/17;
 	size_t i = 0;
 	if(name)
-		printf( "%sconst%s real %s[%zu] = \n", statick ? "static " : ""
-		,	fixed ? "" : " ALIGNED(16)", name, count );
+		printf( "%s%s%sreal %s[%zu] = \n", statick ? "static " : ""
+		,   konst ? "const " : ""
+		,	fixed ? "" : "ALIGNED(16) ", name, count );
 	printf("%s{\n", indent);
 	while(i<count)
 	{
 		size_t line = block > count-i ? count-i : block;
 		printf("%s", indent);
 		if(fixed) for(size_t j=0; j<line; ++j, ++i)
-			printf( "%s%c%11d", i ? "," : "", j ? ' ' : '\t'
-			,	tab[i] );
+			printf( "%s%c%11ld", i ? "," : "", j ? ' ' : '\t'
+			,	(long)(double_to_long_rounded(fixed_scale*tab[i], REAL_FACTOR)) );
 		else for(size_t j=0; j<line; ++j, ++i)
-			printf("%s%c%15.8e", i ? "," : "", j ? ' ' : '\t', (double)(tab[i]/fixed_scale));
+			printf("%s%c%15.8e", i ? "," : "", j ? ' ' : '\t', limit_val(tab[i]));
 		printf("\n");
 	}
 	printf("%s}%s\n", indent, name ? ";" : "");
@@ -91,7 +101,7 @@ static void print_array( int statick, int fixed, double fixed_scale
 // C99 allows passing VLA with the fast dimensions first.
 static void print_array2d( int fixed, double fixed_scale
 ,	const char *name, size_t x, size_t y
-, real tab[][y] )
+, double tab[][y] )
 {
 	printf( "static const%s real %s[%zu][%zu] = \n{\n", fixed ? "" : " ALIGNED(16)"
 	,	name, x, y );
@@ -99,7 +109,7 @@ static void print_array2d( int fixed, double fixed_scale
 	{
 		if(i)
 			printf(",");
-		print_array(1, fixed, fixed_scale, "\t", NULL, y, tab[i]);
+		print_array(1, 1, fixed, fixed_scale, "\t", NULL, y, tab[i]);
 	}
 	printf("};\n");
 }
@@ -199,46 +209,46 @@ int main(int argc, char **argv)
 			printf("// aligned to 16 bytes for vector instructions, e.g. AltiVec\n\n");
 		if(!strcmp("cos", argv[1]))
 		{
-			print_array(1, fixed, 1., "", "cos64", ASIZE(cos64), cos64);
-			print_array(1, fixed, 1., "", "cos32", ASIZE(cos32), cos32);
-			print_array(1, fixed, 1., "", "cos16", ASIZE(cos16), cos16);
-			print_array(1, fixed, 1., "", "cos8",  ASIZE(cos8),  cos8 );
-			print_array(1, fixed, 1., "", "cos4",  ASIZE(cos4),  cos4 );
+			print_array(1, 0, fixed, 1., "", "cos64", ASIZE(cos64), cos64);
+			print_array(1, 0, fixed, 1., "", "cos32", ASIZE(cos32), cos32);
+			print_array(1, 0, fixed, 1., "", "cos16", ASIZE(cos16), cos16);
+			print_array(1, 0, fixed, 1., "", "cos8",  ASIZE(cos8),  cos8 );
+			print_array(1, 0, fixed, 1., "", "cos4",  ASIZE(cos4),  cos4 );
 		}
 		if(!strcmp("l12", argv[1]))
 		{
-			print_array2d(fixed, SCALE_LAYER12, "layer12_table", 27, 64, layer12_table);
+			print_array2d(fixed, SCALE_LAYER12/REAL_FACTOR, "layer12_table", 27, 64, layer12_table);
 		}
 		if(!strcmp("l3", argv[1]))
 		{
-			print_array(1, fixed, SCALE_POW43, "", "ispow"
+			print_array(1, 1, fixed, SCALE_POW43/REAL_FACTOR, "", "ispow"
 			,	sizeof(ispow)/sizeof(*ispow), ispow );
-			print_array(1, fixed, 1., "", "aa_ca", ASIZE(aa_ca), aa_ca);
-			print_array(1, fixed, 1., "", "aa_cs", ASIZE(aa_cs), aa_cs);
+			print_array(1, 1, fixed, 1., "", "aa_ca", ASIZE(aa_ca), aa_ca);
+			print_array(1, 1, fixed, 1., "", "aa_cs", ASIZE(aa_cs), aa_cs);
 			print_array2d(fixed, 1., "win", 4, 36, win);
 			print_array2d(fixed, 1., "win1", 4, 36, win1);
-			print_array(0, fixed, 1., "", "COS9", ASIZE(COS9), COS9);
+			print_array(0, 1, fixed, 1., "", "COS9", ASIZE(COS9), COS9);
 			print_value(fixed, 1., "COS6_1", COS6_1);
 			print_value(fixed, 1., "COS6_2", COS6_2);
-			print_array(0, fixed, 1., "", "tfcos36", ASIZE(tfcos36), tfcos36);
-			print_array(1, fixed, 1., "", "tfcos12", ASIZE(tfcos12), tfcos12);
-			print_array(1, fixed, 1., "", "cos9", ASIZE(cos9), cos9);
-			print_array(1, fixed, 1., "", "cos18", ASIZE(cos18), cos18);
-			print_array( 1, fixed, SCALE_15, ""
+			print_array(0, 1, fixed, 1., "", "tfcos36", ASIZE(tfcos36), tfcos36);
+			print_array(1, 1, fixed, 1., "", "tfcos12", ASIZE(tfcos12), tfcos12);
+			print_array(1, 1, fixed, 1., "", "cos9", ASIZE(cos9), cos9);
+			print_array(1, 1, fixed, 1., "", "cos18", ASIZE(cos18), cos18);
+			print_array( 1, 1, fixed, SCALE_15/REAL_FACTOR, ""
 			,	"tan1_1", ASIZE(tan1_1), tan1_1 );
-			print_array( 1, fixed, SCALE_15, ""
+			print_array( 1, 1, fixed, SCALE_15/REAL_FACTOR, ""
 			,	"tan2_1", ASIZE(tan2_1), tan2_1 );
-			print_array( 1, fixed, SCALE_15, ""
+			print_array( 1, 1, fixed, SCALE_15/REAL_FACTOR, ""
 			,	"tan1_2", ASIZE(tan1_2), tan1_2 );
-			print_array( 1, fixed, SCALE_15, ""
+			print_array( 1, 1, fixed, SCALE_15/REAL_FACTOR, ""
 			,	"tan2_2", ASIZE(tan2_2), tan2_2 );
-			print_array2d( fixed, SCALE_15
+			print_array2d( fixed, SCALE_15/REAL_FACTOR
 			,	"pow1_1", 2, 32, pow1_1 );
-			print_array2d( fixed, SCALE_15
+			print_array2d( fixed, SCALE_15/REAL_FACTOR
 			,	"pow2_1", 2, 32, pow2_1 );
-			print_array2d( fixed, SCALE_15
+			print_array2d( fixed, SCALE_15/REAL_FACTOR
 			,	"pow1_2", 2, 32, pow1_2 );
-			print_array2d( fixed, SCALE_15
+			print_array2d( fixed, SCALE_15/REAL_FACTOR
 			,	"pow2_2", 2, 32, pow2_2 );
 		}
 		if(fixed)
