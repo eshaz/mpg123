@@ -51,7 +51,7 @@ static void print_char_array( const char *indent, const char *name
 }
 
 static void print_value( int fixed, double fixed_scale
-,	const char *name, double val )
+,	const char *name, real val )
 {
 	if(name)
 		printf("static const real %s = ", name);
@@ -64,7 +64,7 @@ static void print_value( int fixed, double fixed_scale
 // I feal uneasy about inf appearing as literal.
 // Do all C99 implementations support it the same?
 // An unreasonably big value should also just work.
-static double limit_val(double val)
+static real limit_val(real val)
 {
 	if(val > 1e38)
 		return 1e38;
@@ -75,7 +75,7 @@ static double limit_val(double val)
 
 static void print_array( int statick, int konst, int fixed, double fixed_scale
 ,	const char *indent, const char *name
-,	size_t count, double tab[] )
+,	size_t count, real tab[] )
 {
 	size_t block = 72/17;
 	size_t i = 0;
@@ -101,7 +101,7 @@ static void print_array( int statick, int konst, int fixed, double fixed_scale
 // C99 allows passing VLA with the fast dimensions first.
 static void print_array2d( int fixed, double fixed_scale
 ,	const char *name, size_t x, size_t y
-, double tab[][y] )
+, real tab[][y] )
 {
 	printf( "static const%s real %s[%zu][%zu] = \n{\n", fixed ? "" : " ALIGNED(16)"
 	,	name, x, y );
